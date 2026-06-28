@@ -10,17 +10,33 @@ if(isset($_SESSION["user_login"])){
 	}
 	
 
+  // redirect to user page if userid not in $_GET
+  if(!empty($_GET["user"])){
+      $clientId = intval($_GET["user"]);
+  }else{
+    header("location: index.php");
+  }
 
-  //get Admin info
+
+
+
+  //get user info
   $stmt=$pdo->prepare("SELECT * FROM users WHERE userid = :userid");
-  $stmt->bindParam(":userid", $userid, PDO::PARAM_STR);
+  $stmt->bindParam(":userid", $clientId, PDO::PARAM_STR);
   $stmt->execute();
   $row=$stmt->fetch();
   $userimage = (!empty($row["profilepix"]) ? "../images/profilepix/".$row["profilepix"]: "../images/profilepix/no-img.png");
   
-  //get Admin info for update
+
+  // Select Unique Id
+  $stmt=$pdo->prepare("SELECT ids FROM sampleid WHERE userid = :userid");
+  $stmt->bindParam("userid", $clientId, PDO::PARAM_STR);
+  $stmt->execute();
+  $id=$stmt->fetch();
+
+  //get user info for update
   $stmt=$pdo->prepare("SELECT * FROM userdata WHERE userid = :userid");
-  $stmt->bindParam(":userid", $userid, PDO::PARAM_STR);
+  $stmt->bindParam(":userid", $clientId, PDO::PARAM_STR);
   $stmt->execute();
   $update=$stmt->fetch();
 
@@ -41,7 +57,7 @@ if(isset($_SESSION["user_login"])){
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FULAFIA | Admin Profile</title>
+  <title>FULAFIA | <?php echo htmlspecialchars($row['name']);?> Profile</title>
 
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -95,20 +111,6 @@ input[type=number]{
   <!-- Main Sidebar Container -->
   <?php include("sidebar.php");?>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">
     <!-- Content Header (Page header) -->
@@ -121,7 +123,7 @@ input[type=number]{
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Admin Profile</li>
+              <li class="breadcrumb-item active"><?php echo htmlspecialchars($row['name']);?> Profile</li>
             </ol>
           </div>
         </div>
@@ -146,7 +148,7 @@ input[type=number]{
 
                 <h3 class="profile-username text-center"><?php echo htmlspecialchars($row['name']);?></h3>
 
-                <p class="text-muted text-center">Admin Profile 
+                <p class="text-muted text-center"><?php echo htmlspecialchars($row['status']);?> Profile 
                 <i class="ion ion-checkmark-circled text-primary"></i>
                 </p>
 
@@ -158,10 +160,6 @@ input[type=number]{
                 <b>Pending</b> <span class="float-right badge bg-danger">2</span>
                 </a>
                 </ul>  -->
-
-                <label for="profilepix" id="select-btn" style="font-weight:500" class="btn btn-dark btn-block">Change Photo</label>
-                <input type='file' name='profilepix' class='display-none' id='profilepix' accept="image/*" />
-
 
               </div>
               <!-- /.card-body -->
@@ -211,24 +209,27 @@ input[type=number]{
                   
                   <div class="row">
                   <div class="col-md-6">
-                  <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="ion ion-android-contact"></i></span>
-                  </div>
-                  <input type="text" name="username" disabled class="form-control" id="username" value="<?php echo htmlspecialchars($row['nick']);?>" placeholder="Enter a Nickname">
-                  </div> 
-                  </div>
-
-
-                    <div class="col-md-6">
                     <div class="input-group mb-3">
                     <div class="input-group-prepend">
                     <span class="input-group-text"><i class="ion ion-android-person"></i></span>
                     </div>
-                    <input type="text" name="fullName" disabled class="form-control" id="fullName" value="<?php echo htmlspecialchars($row['name']);?>" placeholder="Enter Full Name">
+                    <input type="text" name="username" disabled class="form-control" id="username" value="<?php echo htmlspecialchars($row['name']);?>" placeholder="Enter Full Name">
                     </div> 
                     </div>
-                    </div>
+                  
+
+
+                  <div class="col-md-6">
+                  <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ion ion-android-contact"></i></span>
+                  </div>
+                  <input type="text" disabled class="form-control" value="<?php echo htmlspecialchars($row['nick']);?>" placeholder="Enter Username">
+                  </div> 
+                  </div>
+                  </div>
+
+
 
 
                     <div class="row">
@@ -247,15 +248,11 @@ input[type=number]{
                     <div class="input-group-prepend">
                     <span class="input-group-text"><i class="ion ion-ipod"></i></span>
                     </div>
-                    <input type="number" name="phone" class="form-control" id="phone" 
-                    value="<?php if(!empty($update['phone'])){ echo htmlspecialchars($update['phone']) ;} ?>" placeholder="Enter Phone">
+                    <input type="text" name="phone" disabled class="form-control" id="phone" 
+                    value="<?php if(isset($id['ids'])){echo htmlspecialchars($id['ids']);}else{echo 'Enter Matric No';}?> ">  
                     </div>
                     </div>
                     </div>
-
-
-                   
-
 
                     <div class="row">
                     <div class="col-md-6">
@@ -263,8 +260,8 @@ input[type=number]{
                     <div class="input-group-prepend">
                     <span class="input-group-text"><i class="ion ion-android-globe"></i></span>
                     </div>
-                    <input type="text" name="country" class="form-control" id="country" 
-                    value="<?php if(!empty($update['country'])){ echo htmlspecialchars($update['country']) ;}?>"placeholder="Enter Country">
+                    <input type="text" name="country" disabled class="form-control" id="country" 
+                    value="<?php if(!empty($update['country'])){ echo htmlspecialchars($update['country']) ;} ?>" placeholder="Enter country">
                     </div>
                     </div>
                     
@@ -273,14 +270,11 @@ input[type=number]{
                     <div class="input-group-prepend">
                     <span class="input-group-text"><i class="ion ion-ios-location"></i></span>
                     </div>
-                    <input type="text" name="course" class="form-control" id="course" 
+                    <input type="text" name="course" disabled class="form-control" id="course" 
                     value="<?php if(!empty($update['course'])){ echo htmlspecialchars($update['course']) ;}?>" placeholder="Enter Course">
                     </div>
                     </div>
                     </div>
-
-                   <p><br>
-                    <button type="submit" id="update" class="btn btn-primary">Update</button>
                     </form>
             
                   </div>
@@ -326,273 +320,13 @@ input[type=number]{
 <script src="../plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
 
 
+
 <script>
-
-$(function () {
-
-  var Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 6000
-  });
-
-  $('.coversoverlay').hide();
-
-// Update User Profile
-  $('#profilepix').change(function(){
-  var form_data = new FormData();
-  var files = $('#profilepix')[0].files;
-
-
-   for(var i=0; i<files.length; i++)
-   {
-    var name = document.getElementById("profilepix").files[i].name;
-    var ext = name.split('.').pop().toLowerCase();
-    if(jQuery.inArray(ext, ['gif','png','jpg','jpeg']) == -1) 
-    {
-
-//Toast error
-Toast.fire({
-				  icon: "error",
-				  title: "Please select a valid image file"
-				});
-	
-	return false;
-    }
-    var oFReader = new FileReader();
-    oFReader.readAsDataURL(document.getElementById("profilepix").files[i]);
-    var f = document.getElementById("profilepix").files[i];
-    var fsize = f.size||f.fileSize;
-    if(fsize > 9194304) //9mb
-    {
-      
-	//Toast error
-  Toast.fire({
-				  icon: "error",
-				  title: "Image too large. Allowed max size is 9MB"
-				});
-   
-return false;
-    }
-    else
-    {
-     form_data.append("profilepix[]", document.getElementById('profilepix').files[i]);
-    }
-   }
-  
-
-	if(files.length > 0){
-   $.ajax({
-    url:"function.php",
-    method:"POST",
-    data: form_data,
-    contentType: false,
-    cache: false,
-    processData: false,
-    beforeSend:function(){$(".coversoverlay").show();},   
-    success:function(data){
-				
-		//hide Loader
-		$(".coversoverlay").hide();
-		
-		//Embed image
-		$("#ProfilePixResult").html(data);
-		
-		
-    }
-   });
-	}
-
+ 
+ $(document).ready(function(){
+	$('.coversoverlay').hide();
 
  });
- 
- 
-
-
-
-
-
-
-
-// Validate name with RGEX
-$("#fullName").on("keypress", function(e){
-    if(!/([a-zA-Z\s-])+/.test(String.fromCharCode(e.which))) 
-    return false;
-  });
-
-  $("#country").on("keypress", function(e){
-    if(!/([a-zA-Z\s-])+/.test(String.fromCharCode(e.which))) 
-    return false;
-  });
-
-  $("#course").on("keypress", function(e){
-    if(!/([a-zA-Z\s-])+/.test(String.fromCharCode(e.which))) 
-    return false;
-  });
-  
-  $("#phone").on("keypress", function(e){
-    if(!/([0-9])+/.test(String.fromCharCode(e.which))) 
-    return false;
-  });
-
-
-
-
-  $.validator.setDefaults({
-    submitHandler: function () {
-     
-    let update = "updateAdmin";
-			
-		let fullName = $("#fullName").val();
-		let username = $("#username").val();
-		let email = $("#email").val();
-		let phone = $("#phone").val();
-		let country = $("#country").val();
-		let course = $("#course").val();
-
-
-		$.ajax({
-			url:'function.php',
-			method:'POST',
-			data:{fullName:fullName,username:username,email:email,phone:phone,country:country, course:course, update:update},
-			beforeSend:function(){$(".coversoverlay").show()},
-			success:function(data){
-				$("#result").html(data);
-				
-				console.log(data);
-				$(".coversoverlay").hide();
-				
-			}
-		});
-
-
-    }
-  });
-
-  
-
-
-
-
-  $('#updateForm').validate({
-    rules: {
-      accountName: {
-        required: true,
-        minlength:3,
-        normalizer: function(value){
-          return $.trim(value);
-        }
-      },
-      course: {
-        required: true,
-        minlength:3,
-        normalizer: function(value){
-          return $.trim(value);
-        }
-      },
-    
-      officeAddress: {
-        required: true,
-        minlength:7
-      },
-      phone: {
-        required: true,
-        minlength:11,
-        maxlength:13
-      },
-      country: {
-        required: true,
-        minlength: 3,
-        normalizer: function(value){
-          return $.trim(value);
-        }
-      },
-
-      bankName: {
-        required: true,
-        minlength: 3,
-        normalizer: function(value){
-          return $.trim(value);
-        }
-      },
-
-      accountNumber: {
-        required: true,
-        minlength: 10,
-        maxlength: 10
-      },
-
-
-    },
-    messages: {
-      fullName: {
-        required: "Enter your full name",
-        minlength: "Name too short",
-      },
-     
-      accountName: {
-        required: "Enter your Account Name"
-      },
-      
-      course: {
-        required: "Enter course of origin"
-      },
-     
-      phone: {
-        required: "Please enter phone number",
-        minlength: "Number is too short",
-        maxlength: "Please enter a valid number"
-      },
-      country: {
-        required: "Please enter a country",
-        minlength: "Country name too short"
-      },
-   
-      officeAddress: {
-        required: "Please enter your office address",
-      },
-      bankName: {
-        required: "Please enter your bank name",
-        minlength: "Enter a valid bank name"
-      },
-      accountNumber: {
-        required: "Enter your account number",
-        minlength: "Invalid account number",
-        maxlength: "Account number is invalid"
-      }
-    },
-
-
-
-    errorElement: 'span',
-    errorPlacement: function (error, element) {
-      error.addClass('invalid-feedback');
-      element.closest('.input-group').append(error);
-    },
-    highlight: function (element, errorClass, validClass) {
-      $(element).addClass('is-invalid');
-    },
-    unhighlight: function (element, errorClass, validClass) {
-      $(element).removeClass('is-invalid');
-    }
-  });
-
-
-
-//Edit Profile Again
-$("#editAgain").click(function(){
-		
-    $("#updateForm").slideDown(function(){
-      $("#suc").addClass("display-none");
-      
-    });	
-  
-})
-
-// Validate with RegEx
-});
-
 </script>
 
 

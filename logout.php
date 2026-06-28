@@ -11,5 +11,5 @@ session_destroy();
 ?>
 
 <?php
-header("location: register-login.php");
+header("location: ../register-login.php");
 ?>
